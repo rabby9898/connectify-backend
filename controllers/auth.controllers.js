@@ -1,3 +1,4 @@
+const generateTokenAndSetCookie = require("../lib/utils/authToken");
 const userModel = require("../models/user.model");
 
 const signup = async (req, res) => {
@@ -26,7 +27,7 @@ const signup = async (req, res) => {
 
     // hash password
     const salt = await bcrypt.genSalt(10);
-    const hashPassword = await bcrypt.hash(password, hash);
+    const hashPassword = await bcrypt.hash(password, salt);
 
     const newUser = new User({
       fullName,
@@ -60,9 +61,6 @@ const signup = async (req, res) => {
       error: "Server error",
     });
   }
-  res.json({
-    data: "Sign up endpoint",
-  });
 };
 const login = async (req, res) => {
   res.json({
