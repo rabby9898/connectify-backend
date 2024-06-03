@@ -1,5 +1,5 @@
 const generateTokenAndSetCookie = require("../lib/utils/authToken.js");
-const userModel = require("../models/user.model");
+const userModel = require("../models/user.model.js");
 const bcrypt = require("bcryptjs");
 const signup = async (req, res) => {
   try {
@@ -67,18 +67,63 @@ const signup = async (req, res) => {
   }
 };
 const login = async (req, res) => {
-  res.json({
-    data: "Login up endpoint",
-  });
+  try {
+    const { username, password } = req.body;
+
+    const user = await userModel.findOne({ username });
+    const isPasswordCorrect = await bcrypt.compare(
+      password,
+      user?.password || ""
+    );
+    if (!user || !isPasswordCorrect) {
+      return res.status(400).send({ error: "Invalid password or username" });
+    }
+    generateTokenAndSetCookie(user?._id, res);
+
+    res.status(200).send({
+      _id: user._id,
+      fullName: user.fullName,
+      username: user.username,
+      email: user.email,
+      profileImg: user.profileImg,
+      coverImg: user.coverImg,
+      followers: user.followers,
+      following: user.following,
+    });
+  } catch (error) {
+    console.log("Error in login controller", error.message);
+    res.status(500).json({
+      error: "Server error",
+    });
+  }
 };
 const logout = async (req, res) => {
-  res.json({
-    data: "Logout up endpoint",
-  });
+  try {
+    res.cookie("jwt", "", { maxAge: 0 });
+    res.status(200).json({ error: "Logout successful" });
+  } catch (error) {
+    console.log("Error in login controller", error.message);
+    res.status(500).json({
+      error: "Server error",
+    });
+  }
+};
+
+const getMe = async (req, res) => {
+  try {
+    const user = await userModel.findById(req.user._id).select("-password");
+    res.status(200).json(user);
+  } catch (error) {
+    console.log("Error in login controller", error.message);
+    res.status(500).json({
+      error: "Server error",
+    });
+  }
 };
 
 module.exports = {
   signup,
   login,
   logout,
+  getMe,
 };
