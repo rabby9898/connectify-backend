@@ -9,7 +9,7 @@ const protectedRoute = async (req, res, next) => {
         error: "Unauthorized user access",
       });
     }
-    const decoded = jwt.verify(token, process.env, ACCESS_TOKEN_KEY);
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_KEY);
     if (!decoded) {
       return res.status(401).send({
         error: "Invalid user access",
@@ -25,7 +25,8 @@ const protectedRoute = async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
-    res.status(400).send({
+    console.log("Error in login controller", error.message);
+    res.status(500).send({
       error: "Sever Error",
     });
   }
