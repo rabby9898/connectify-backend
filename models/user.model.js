@@ -37,11 +37,11 @@ const userSchema = new mongoose.Schema(
       },
     ],
 
-    profilePic: {
+    profileImg: {
       type: String,
       default: "",
     },
-    coverPic: {
+    coverImg: {
       type: String,
       default: "",
     },

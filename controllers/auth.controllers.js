@@ -1,6 +1,6 @@
-const generateTokenAndSetCookie = require("../lib/utils/authToken");
+const generateTokenAndSetCookie = require("../lib/utils/authToken.js");
 const userModel = require("../models/user.model");
-
+const bcrypt = require("bcryptjs");
 const signup = async (req, res) => {
   try {
     const { fullName, username, email, password } = req.body;
@@ -24,12 +24,16 @@ const signup = async (req, res) => {
         error: "Email is already taken!",
       });
     }
-
+    if (password < 6) {
+      return res
+        .status(400)
+        .json({ error: "Password should at least 6 characters" });
+    }
     // hash password
     const salt = await bcrypt.genSalt(10);
     const hashPassword = await bcrypt.hash(password, salt);
 
-    const newUser = new User({
+    const newUser = new userModel({
       fullName,
       username,
       email,
@@ -45,18 +49,18 @@ const signup = async (req, res) => {
         fullName: newUser.fullName,
         username: newUser.username,
         email: newUser.email,
+        profileImg: newUser.profileImg,
+        coverImg: newUser.coverImg,
         followers: newUser.followers,
         following: newUser.following,
-        profileImg: newUser.profileImg,
-        followers: newUser.followers,
-        coverImg: newUser.coverImg,
       });
     } else {
       res.status(400).json({
         error: "Invalid User Data",
       });
     }
-  } catch (err) {
+  } catch (error) {
+    console.log("Error in signup controller", error.message);
     res.status(500).json({
       error: "Server error",
     });
