@@ -9,11 +9,11 @@ const getUserProfile = async (req, res) => {
     const { username } = req.params;
     const user = await User.findOne({ username }).select("-password");
     if (!user) {
-      return res.status(401).send({ message: "User not found" });
+      return res.status(401).json({ message: "User not found" });
     }
   } catch (error) {
     console.log("Error in getUserProfile controller", error.message);
-    res.status(500).send({ error: error.message });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -26,10 +26,10 @@ const followUnfollowUser = async (req, res) => {
     if (id === req.user._id.toString()) {
       return res
         .status(400)
-        .send({ error: "You can't follow/unfollow yourself" });
+        .json({ error: "You can't follow/unfollow yourself" });
     }
     if (!userToModify || !currentUser) {
-      return res.status(400).send({ error: "User not found!" });
+      return res.status(400).json({ error: "User not found!" });
     }
     const isFollowed = currentUser.following.includes(id);
 
@@ -42,7 +42,7 @@ const followUnfollowUser = async (req, res) => {
         $pull: { following: id },
       });
 
-      res.status(200).send({ message: "User unfollowed successfully" });
+      res.status(200).json({ message: "User unfollowed successfully" });
     } else {
       // Follow the user
       await User.findByIdAndUpdate(id, {
@@ -61,11 +61,11 @@ const followUnfollowUser = async (req, res) => {
       await newNotification.save();
 
       //   response user updates
-      res.status(200).send({ message: "User followed successfully" });
+      res.status(200).json({ message: "User followed successfully" });
     }
   } catch (error) {
     console.log("Error in followUnfollowUser, controller", error.message);
-    res.status(500).send({ error: error.message });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -92,10 +92,10 @@ const suggestedUser = async (req, res) => {
     const suggestedUsers = filteredUsers.slice(0, 4);
 
     suggestedUsers.forEach((user) => (user.password = null));
-    res.status(200).json(suggestedUsers);
+    res.status(200).send(suggestedUsers);
   } catch (error) {
     console.log("Error in suggested, controller", error.message);
-    res.status(500).send({ error: error.message });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -108,15 +108,15 @@ const updateUserProfile = async (req, res) => {
     const userId = req.user._id;
     let user = await User.findById(userId);
     if (!user) {
-      return res.status(400).send({ error: "User not found" });
+      return res.status(400).json({ error: "User not found" });
     }
     if (
       (!currentPassword && newPassword) ||
       (!newPassword && currentPassword)
     ) {
-      return res
-        .status(400)
-        .send({ error: "Please provide both current password & new password" });
+      return res.status(400).json({
+        error: "Please provide both current password & new password",
+      });
     }
 
     if (currentPassword && newPassword) {
@@ -124,12 +124,12 @@ const updateUserProfile = async (req, res) => {
       if (!isMatch) {
         return res
           .status(400)
-          .send({ error: "Current password is not matched!" });
+          .json({ error: "Current password is not matched!" });
       }
       if (newPassword.length < 6) {
         return res
           .status(400)
-          .send({ error: "Password length should at least 6 characters" });
+          .json({ error: "Password length should at least 6 characters" });
       }
 
       const salt = await bcrypt.genSalt(10);
@@ -175,7 +175,7 @@ const updateUserProfile = async (req, res) => {
     });
   } catch (error) {
     console.log("Error updating", error.message);
-    res.status(500).send({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
