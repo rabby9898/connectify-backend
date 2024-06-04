@@ -1,5 +1,7 @@
 const Notification = require("../models/notifications.model.js");
 const User = require("../models/user.model.js");
+const bcrypt = require("bcryptjs");
+const cloudinary = require("cloudinary").v2;
 
 const getUserProfile = async (req, res) => {
   try {
@@ -96,8 +98,89 @@ const suggestedUser = async (req, res) => {
   }
 };
 
+const updateUserProfile = async (req, res) => {
+  const { fullName, email, username, currentPassword, newPassword, bio, link } =
+    req.body;
+  let { profileImg, coverImg } = req.body;
+
+  try {
+    const userId = req.user._id;
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(400).send({ error: "User not found" });
+    }
+    if (
+      (!currentPassword && newPassword) ||
+      (!newPassword && currentPassword)
+    ) {
+      return res
+        .status(400)
+        .send({ error: "Please provide both current password & new password" });
+    }
+
+    if (currentPassword && newPassword) {
+      const isMatch = await bcrypt.compare(currentPassword, user.password);
+      if (!isMatch) {
+        return res
+          .status(400)
+          .send({ error: "Current password is not matched!" });
+      }
+      if (newPassword < 6) {
+        return res
+          .status(400)
+          .send({ error: "Password length should at least 6 characters" });
+      }
+
+      const salt = await bcrypt.gentSalt(10);
+      user.password = await bcrypt.hash(newPassword, salt);
+    }
+    if (profileImg) {
+      if (user.profileImg) {
+        await cloudinary.uploader.destroy(
+          user.profileImg.split("/").pop().split(".")[0]
+        );
+      }
+      const uploadRes = await cloudinary.uploader.upload(profileImg);
+      profileImg = uploadRes.secure_url;
+    }
+    if (coverImg) {
+      if (user.coverImg) {
+        await cloudinary.uploader.destroy(
+          user.coverImg.split("/").pop().split(".")[0]
+        );
+      }
+      const uploadRes = await cloudinary.uploader.upload(coverImg);
+      coverImg = uploadRes.secure_url;
+    }
+
+    //   update profile info
+    user.fullName = fullName || user.fullName;
+    user.username = username || user.username;
+    user.email = email || user.email;
+    user.profileImg = profileImg || user.profileImg;
+    user.coverImg = coverImg || user.coverImg;
+    user.bio = bio || user.bio;
+    user.link = link || user.link;
+
+    await user.save();
+
+    user.password = null;
+
+    return res.status(200).send({
+      data: user,
+      message: "Profile updated successfully",
+      success: true,
+      error: false,
+    });
+  } catch (error) {
+    console.log("Error updating", error.message);
+    res.status(500).send({ message: error.message });
+  }
+};
+
 module.exports = {
   getUserProfile,
   followUnfollowUser,
   suggestedUser,
+  updateUserProfile,
 };
