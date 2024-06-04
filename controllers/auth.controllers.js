@@ -1,6 +1,6 @@
 const generateTokenAndSetCookie = require("../lib/utils/authToken.js");
-const userModel = require("../models/user.model.js");
 const bcrypt = require("bcryptjs");
+const User = require("../models/user.model.js");
 const signup = async (req, res) => {
   try {
     const { fullName, username, email, password } = req.body;
@@ -11,14 +11,14 @@ const signup = async (req, res) => {
       });
     }
 
-    const existUser = await userModel.findOne({ username });
+    const existUser = await User.findOne({ username });
     if (existUser) {
       return res.status(400).json({
         error: "Username is already taken!",
       });
     }
 
-    const existEmail = await userModel.findOne({ email });
+    const existEmail = await User.findOne({ email });
     if (existEmail) {
       return res.status(400).json({
         error: "Email is already taken!",
@@ -33,7 +33,7 @@ const signup = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashPassword = await bcrypt.hash(password, salt);
 
-    const newUser = new userModel({
+    const newUser = new User({
       fullName,
       username,
       email,
@@ -70,7 +70,7 @@ const login = async (req, res) => {
   try {
     const { username, password } = req.body;
 
-    const user = await userModel.findOne({ username });
+    const user = await User.findOne({ username });
     const isPasswordCorrect = await bcrypt.compare(
       password,
       user?.password || ""
@@ -111,7 +111,7 @@ const logout = async (req, res) => {
 
 const getMe = async (req, res) => {
   try {
-    const user = await userModel.findById(req.user._id).select("-password");
+    const user = await User.findById(req.user._id).select("-password");
     res.status(200).json(user);
   } catch (error) {
     console.log("Error in login controller", error.message);

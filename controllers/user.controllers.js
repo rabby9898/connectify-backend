@@ -1,6 +1,7 @@
 const Notification = require("../models/notifications.model.js");
-const User = require("../models/user.model.js");
+
 const bcrypt = require("bcryptjs");
+const User = require("../models/user.model.js");
 const cloudinary = require("cloudinary").v2;
 
 const getUserProfile = async (req, res) => {
@@ -105,7 +106,7 @@ const updateUserProfile = async (req, res) => {
 
   try {
     const userId = req.user._id;
-    const user = await User.findById(userId);
+    let user = await User.findById(userId);
     if (!user) {
       return res.status(400).send({ error: "User not found" });
     }
@@ -125,13 +126,13 @@ const updateUserProfile = async (req, res) => {
           .status(400)
           .send({ error: "Current password is not matched!" });
       }
-      if (newPassword < 6) {
+      if (newPassword.length < 6) {
         return res
           .status(400)
           .send({ error: "Password length should at least 6 characters" });
       }
 
-      const salt = await bcrypt.gentSalt(10);
+      const salt = await bcrypt.genSalt(10);
       user.password = await bcrypt.hash(newPassword, salt);
     }
     if (profileImg) {
