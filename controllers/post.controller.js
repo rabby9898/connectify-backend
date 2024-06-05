@@ -89,19 +89,28 @@ const likeUnlikePost = async (req, res) => {
     const { id: postId } = req.params;
 
     const post = await Post.findById(postId);
+
     if (!post) {
-      return res.status(400).json({ error: "Post not found!" });
+      return res.status(404).json({ error: "Post not found" });
     }
 
     const userLikedPost = post.likes.includes(userId);
+
     if (userLikedPost) {
-      // unlike post
-      await Post.updateOne({ id: postId }, { $pull: { likes: userId } });
-      res.status(200).json({ message: "Dislike post" });
+      // Unlike post
+      await Post.updateOne({ _id: postId }, { $pull: { likes: userId } });
+      await User.updateOne({ _id: userId }, { $pull: { likedPosts: postId } });
+
+      const updatedLikes = post.likes.filter(
+        (id) => id.toString() !== userId.toString()
+      );
+      res.status(200).json(updatedLikes);
     } else {
-      // like post
+      // Like post
       post.likes.push(userId);
+      await User.updateOne({ _id: userId }, { $push: { likedPosts: postId } });
       await post.save();
+
       const notification = new Notification({
         from: userId,
         to: post.user,
@@ -109,11 +118,12 @@ const likeUnlikePost = async (req, res) => {
       });
       await notification.save();
 
-      res.status(200).json({ message: "Post like successfully" });
+      const updatedLikes = post.likes;
+      res.status(200).json(updatedLikes);
     }
   } catch (error) {
-    console.log("Error deleting", error.message);
-    res.status(500).json({ message: error.message });
+    console.log("Error in likeUnlikePost controller: ", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -140,6 +150,29 @@ const getAllPosts = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+const getLikedPosts = async (req, res) => {
+  const userId = req.params.id;
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const likedPosts = await Post.find({ _id: { $in: user.likedPosts } })
+      .populate({
+        path: "user",
+        select: "-password",
+      })
+      .populate({
+        path: "comments.user",
+        select: "-password",
+      });
+
+    res.status(200).json(likedPosts);
+  } catch (error) {
+    console.log("Error in getLikedPosts controller: ", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
 
 module.exports = {
   createPost,
@@ -147,4 +180,5 @@ module.exports = {
   commentOnPost,
   likeUnlikePost,
   getAllPosts,
+  getLikedPosts,
 };

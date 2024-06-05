@@ -1,4 +1,4 @@
-const { default: mongoose } = require("mongoose");
+const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(
   {
@@ -10,7 +10,6 @@ const userSchema = new mongoose.Schema(
     fullName: {
       type: String,
       required: true,
-      unique: true,
     },
     password: {
       type: String,
@@ -36,7 +35,6 @@ const userSchema = new mongoose.Schema(
         default: [],
       },
     ],
-
     profileImg: {
       type: String,
       default: "",
@@ -49,6 +47,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+
     link: {
       type: String,
       default: "",
@@ -57,7 +56,7 @@ const userSchema = new mongoose.Schema(
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Post",
-        default: [],
+        // default: [],
       },
     ],
   },
