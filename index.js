@@ -2,6 +2,7 @@ const express = require("express");
 const authRoutes = require("./routes/auth.routes.js");
 const userRoutes = require("./routes/user.routes.js");
 const postRoutes = require("./routes/post.routes.js");
+const notificationsRoutes = require("./routes/notifications.routes.js");
 
 const connectMongoDB = require("./db/connectMongoDB");
 var cookieParser = require("cookie-parser");
@@ -24,6 +25,7 @@ cloudinary.config({
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/posts", postRoutes);
+app.use("/api/notifications", notificationsRoutes);
 
 app.listen(port, () => {
   console.log(`server is running at ${port}`);
